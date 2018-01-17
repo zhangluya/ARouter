@@ -6,11 +6,15 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.os.Build;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.alibaba.android.arouter.launcher.ARouter;
 import com.alibaba.android.arouter.thread.DefaultPoolExecutor;
+import com.qihoo360.replugin.RePlugin;
+import com.qihoo360.replugin.model.PluginInfo;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,7 +74,7 @@ public class ClassUtils {
                     DexFile dexfile = null;
 
                     try {
-                        if (path.endsWith(EXTRACTED_SUFFIX)) {
+                        if (path.endsWith(EXTRACTED_SUFFIX) || path.endsWith(".jar")) {
                             //NOT use new DexFile(path), because it will throw "permission error in /data/dalvik-cache"
                             dexfile = DexFile.loadDex(path, path + ".tmp", 0);
                         } else {
@@ -148,6 +152,58 @@ public class ClassUtils {
             sourcePaths.addAll(tryLoadInstantRunDexFile(applicationInfo));
         }
         return sourcePaths;
+    }
+
+    public static Set<String> getPluginClassesByPluginSourcePaths(String pluginName, String pkgName) {
+        Set<String> classNames = new HashSet<>();
+        String path = getPluginSourcePaths(pluginName);
+
+        if (TextUtils.isEmpty(path)) {
+            Log.i(Consts.TAG, String.format("path is null. [ '%s' ]", path));
+
+            return classNames;
+        }
+
+        DexFile dexfile = null;
+
+        try {
+            if (path.endsWith(EXTRACTED_SUFFIX) || path.endsWith(".jar")) {
+                //NOT use new DexFile(path), because it will throw "permission error in /data/dalvik-cache"
+                dexfile = DexFile.loadDex(path, path + ".tmp", 0);
+            } else {
+                dexfile = new DexFile(path);
+            }
+
+            Enumeration<String> dexEntries = dexfile.entries();
+            while (dexEntries.hasMoreElements()) {
+                String className = dexEntries.nextElement();
+                if (className.startsWith(pkgName)) {
+                    classNames.add(className);
+                }
+            }
+        } catch (Throwable ignore) {
+            Log.e("ARouter", "Scan map file in dex files made error.", ignore);
+        } finally {
+            if (null != dexfile) {
+                try {
+                    dexfile.close();
+                } catch (Throwable ignore) {
+                }
+            }
+
+        }
+
+        return classNames;
+    }
+
+    @Nullable
+    public static String getPluginSourcePaths(String pluginName) {
+        PluginInfo pluginInfo = RePlugin.getPluginInfo(pluginName);
+        if (pluginInfo == null) {
+            Log.i(Consts.TAG, String.format("plugin is null [ '%s' ]", pluginName));
+            return null;
+        }
+        return pluginInfo.getApkFile().getAbsolutePath();
     }
 
     /**

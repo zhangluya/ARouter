@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // 发阶段，线上开启调试模式有安全风险，可以使用BuildConfig.DEBUG
                 // 来区分环境
                 ARouter.openDebug();
-                ARouter.init(getApplication());
+                ARouter.init(getApplication(), "main");
                 break;
             case R.id.normalNavigation:
                 ARouter.getInstance()
