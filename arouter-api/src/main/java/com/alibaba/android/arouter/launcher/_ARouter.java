@@ -29,6 +29,8 @@ import com.alibaba.android.arouter.thread.DefaultPoolExecutor;
 import com.alibaba.android.arouter.utils.Consts;
 import com.alibaba.android.arouter.utils.DefaultLogger;
 import com.alibaba.android.arouter.utils.TextUtils;
+import com.qihoo360.replugin.RePlugin;
+import com.qihoo360.replugin.model.PluginInfo;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -52,13 +54,15 @@ final class _ARouter {
     private static Context mContext;
 
     private static InterceptorService interceptorService;
+    private static CharSequence sHostGroup;
 
     private _ARouter() {
     }
 
-    protected static synchronized boolean init(Application application) {
+    protected static synchronized boolean init(Application application, CharSequence hostGroup) {
         mContext = application;
-        LogisticsCenter.init(mContext, executor);
+        sHostGroup = hostGroup;
+        LogisticsCenter.init(mContext, executor, hostGroup);
         logger.info(Consts.TAG, "ARouter init success!");
         hasInit = true;
 
@@ -67,6 +71,10 @@ final class _ARouter {
         //     application.registerActivityLifecycleCallbacks(new AutowiredLifecycleCallback());
         // }
         return true;
+    }
+
+    static void installPluginRouterMap(String pluginName) {
+        LogisticsCenter.installPluginRouterMap(pluginName, true);
     }
 
     /**
@@ -337,37 +345,11 @@ final class _ARouter {
 
         switch (postcard.getType()) {
             case ACTIVITY:
-                // Build intent
-                final Intent intent = new Intent(currentContext, postcard.getDestination());
-                intent.putExtras(postcard.getExtras());
-
-                // Set flags.
-                int flags = postcard.getFlags();
-                if (-1 != flags) {
-                    intent.setFlags(flags);
-                } else if (!(currentContext instanceof Activity)) {    // Non activity, need less one flag.
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                if (android.text.TextUtils.equals(sHostGroup, postcard.getGroup())) {
+                    startHostActivity(postcard, requestCode, callback, currentContext);
+                } else {
+                    startPluginActivity(postcard, requestCode, callback, currentContext);
                 }
-
-                // Navigation in main looper.
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (requestCode > 0) {  // Need start for result
-                            ActivityCompat.startActivityForResult((Activity) currentContext, intent, requestCode, postcard.getOptionsBundle());
-                        } else {
-                            ActivityCompat.startActivity(currentContext, intent, postcard.getOptionsBundle());
-                        }
-
-                        if ((0 != postcard.getEnterAnim() || 0 != postcard.getExitAnim()) && currentContext instanceof Activity) {    // Old version.
-                            ((Activity) currentContext).overridePendingTransition(postcard.getEnterAnim(), postcard.getExitAnim());
-                        }
-
-                        if (null != callback) { // Navigation over.
-                            callback.onArrival(postcard);
-                        }
-                    }
-                });
 
                 break;
             case PROVIDER:
@@ -395,5 +377,75 @@ final class _ARouter {
         }
 
         return null;
+    }
+
+    private void startPluginActivity(final Postcard postcard, final int requestCode, final NavigationCallback callback, final Context currentContext) {
+        String group = postcard.getGroup();
+        PluginInfo pluginInfo = RePlugin.getPluginInfo(group);
+        if (pluginInfo == null) {
+            logger.error(Consts.TAG, "未找到插件路由: " + postcard.getPath());
+
+            return;
+        }
+
+        final Intent intent = RePlugin.createIntent(pluginInfo.getName(), postcard.getDestination().getName());
+        intent.putExtras(postcard.getExtras());
+        // Set flags.
+        int flags = postcard.getFlags();
+        if (-1 != flags) {
+            intent.setFlags(flags);
+        } else if (!(currentContext instanceof Activity)) {    // Non activity, need less one flag.
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
+
+        // Navigation in main looper.
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                if (requestCode > 0) {  // Need start for result
+                    RePlugin.startActivityForResult((Activity) currentContext, intent, requestCode, postcard.getOptionsBundle());
+                } else {
+                    RePlugin.startActivity(currentContext, intent);
+                }
+
+                if (null != callback) { // Navigation over.
+                    callback.onArrival(postcard);
+                }
+            }
+        });
+    }
+
+    private void startHostActivity(final Postcard postcard, final int requestCode, final NavigationCallback callback, final Context currentContext) {
+        // Build intent
+        final Intent intent = new Intent(currentContext, postcard.getDestination());
+        intent.putExtras(postcard.getExtras());
+
+        // Set flags.
+        int flags = postcard.getFlags();
+        if (-1 != flags) {
+            intent.setFlags(flags);
+        } else if (!(currentContext instanceof Activity)) {    // Non activity, need less one flag.
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
+
+        // Navigation in main looper.
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                if (requestCode > 0) {  // Need start for result
+                    ActivityCompat.startActivityForResult((Activity) currentContext, intent, requestCode, postcard.getOptionsBundle());
+                } else {
+                    ActivityCompat.startActivity(currentContext, intent, postcard.getOptionsBundle());
+                }
+
+                if ((0 != postcard.getEnterAnim() || 0 != postcard.getExitAnim()) && currentContext instanceof Activity) {    // Old version.
+                    ((Activity) currentContext).overridePendingTransition(postcard.getEnterAnim(), postcard.getExitAnim());
+                }
+
+                if (null != callback) { // Navigation over.
+                    callback.onArrival(postcard);
+                }
+            }
+        });
     }
 }
