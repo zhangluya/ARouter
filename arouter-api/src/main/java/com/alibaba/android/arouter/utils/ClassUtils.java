@@ -199,8 +199,8 @@ public class ClassUtils {
     @Nullable
     public static String getPluginSourcePaths(String pluginName) {
         PluginInfo pluginInfo = RePlugin.getPluginInfo(pluginName);
-        if (pluginInfo == null) {
-            Log.i(Consts.TAG, String.format("plugin is null [ '%s' ]", pluginName));
+        if (pluginInfo == null || !RePlugin.isPluginDexExtracted(pluginName) || !RePlugin.isPluginUsed(pluginName)) {
+            Log.i(Consts.TAG, String.format("plugin is null [ '%s' ], or never used!", pluginName));
             return null;
         }
         return pluginInfo.getApkFile().getAbsolutePath();

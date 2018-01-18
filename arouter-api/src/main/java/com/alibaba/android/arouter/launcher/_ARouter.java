@@ -177,7 +177,7 @@ final class _ARouter {
     }
 
     static void inject(Object thiz) {
-        AutowiredService autowiredService = ((AutowiredService) ARouter.getInstance().build("/arouter/service/autowired").navigation());
+        AutowiredService autowiredService = ((AutowiredService) ARouter.getInstance().build("/arouter/service/pluginAutowired").navigation());
         if (null != autowiredService) {
             autowiredService.autowire(thiz);
         }

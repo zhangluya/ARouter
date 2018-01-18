@@ -9,6 +9,7 @@ import com.alibaba.android.arouter.exception.NoRouteFoundException;
 import com.alibaba.android.arouter.facade.Postcard;
 import com.alibaba.android.arouter.facade.enums.TypeKind;
 import com.alibaba.android.arouter.facade.model.RouteMeta;
+import com.alibaba.android.arouter.facade.service.InterceptorService;
 import com.alibaba.android.arouter.facade.template.IInterceptorGroup;
 import com.alibaba.android.arouter.facade.template.IProvider;
 import com.alibaba.android.arouter.facade.template.IProviderGroup;
@@ -177,6 +178,12 @@ public class LogisticsCenter {
 
             if (ARouter.debuggable()) {
                 logger.debug(TAG, String.format(Locale.getDefault(), "LogisticsCenter has already been loaded, GroupIndex[%d], InterceptorIndex[%d], ProviderIndex[%d]", Warehouse.groupsIndex.size(), Warehouse.interceptorsIndex.size(), Warehouse.providersIndex.size()));
+            }
+
+            Object interceptorServices = ARouter.getInstance().build("/arouter/service/pluginInterceptor").navigation();
+
+            if (interceptorServices != null) {
+                ((PluginInterceptorServiceImpl)interceptorServices).installPluginInterceptors();
             }
 
             PLUGINS_INTI_FLAGS.put(pluginName, true);
