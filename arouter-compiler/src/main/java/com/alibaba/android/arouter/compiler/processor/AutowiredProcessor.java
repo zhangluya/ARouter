@@ -1,5 +1,6 @@
 package com.alibaba.android.arouter.compiler.processor;
 
+import com.alibaba.android.arouter.compiler.utils.RoutersMappingGenerator;
 import com.alibaba.android.arouter.compiler.utils.Consts;
 import com.alibaba.android.arouter.compiler.utils.Logger;
 import com.alibaba.android.arouter.compiler.utils.TypeUtils;
@@ -21,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +46,7 @@ import javax.lang.model.util.Types;
 import static com.alibaba.android.arouter.compiler.utils.Consts.ANNOTATION_TYPE_AUTOWIRED;
 import static com.alibaba.android.arouter.compiler.utils.Consts.ISYRINGE;
 import static com.alibaba.android.arouter.compiler.utils.Consts.JSON_SERVICE;
+import static com.alibaba.android.arouter.compiler.utils.Consts.KEY_ASSETS_PATH;
 import static com.alibaba.android.arouter.compiler.utils.Consts.KEY_MODULE_NAME;
 import static com.alibaba.android.arouter.compiler.utils.Consts.METHOD_INJECT;
 import static com.alibaba.android.arouter.compiler.utils.Consts.NAME_OF_AUTOWIRED;
@@ -70,6 +73,10 @@ public class AutowiredProcessor extends AbstractProcessor {
     private Map<TypeElement, List<Element>> parentAndChild = new HashMap<>();   // Contain field need autowired and his super class.
     private static final ClassName ARouterClass = ClassName.get("com.alibaba.android.arouter.launcher", "ARouter");
     private static final ClassName AndroidLog = ClassName.get("android.util", "Log");
+    private Set<String> needLoadClassList;
+    private String moduleName;
+    private String moduleNameNoFormat;
+    private String assetsPath;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnvironment) {
@@ -83,6 +90,28 @@ public class AutowiredProcessor extends AbstractProcessor {
 
         logger = new Logger(processingEnv.getMessager());   // Package the log utils.
 
+        needLoadClassList = new HashSet<>();
+
+        Map<String, String> options = processingEnv.getOptions();
+        if (MapUtils.isNotEmpty(options)) {
+            moduleName = options.get(KEY_MODULE_NAME);
+            moduleNameNoFormat = options.get(KEY_MODULE_NAME);
+            assetsPath = options.get(KEY_ASSETS_PATH);
+        }
+
+        if (StringUtils.isNotEmpty(moduleName)) {
+            moduleName = moduleName.replaceAll("[^0-9a-zA-Z_]+", "");
+            logger.info("The user has configuration the module name, it was [" + moduleName + "]");
+        } else {
+            logger.error("These no module name, at 'build.gradle', like :\n" +
+                    "apt {\n" +
+                    "    arguments {\n" +
+                    "        moduleName project.getName();\n" +
+                    "    }\n" +
+                    "}\n");
+            throw new RuntimeException("ARouter::Compiler >>> No module name, for more information, look at gradle log.");
+        }
+
         logger.info(">>> AutowiredProcessor init. <<<");
     }
 
@@ -93,6 +122,10 @@ public class AutowiredProcessor extends AbstractProcessor {
                 logger.info(">>> Found autowired field, start... <<<");
                 categories(roundEnvironment.getElementsAnnotatedWith(Autowired.class));
                 generateHelper();
+
+                if (!needLoadClassList.isEmpty()) {
+                    RoutersMappingGenerator.createRouterMapping(logger, needLoadClassList, assetsPath, moduleNameNoFormat);
+                }
 
             } catch (Exception e) {
                 logger.error(e);
@@ -215,6 +248,8 @@ public class AutowiredProcessor extends AbstractProcessor {
 
                 // Generate autowire helper
                 JavaFile.builder(packageName, helper.build()).build().writeTo(mFiler);
+
+                needLoadClassList.add(packageName + "." + fileName);
 
                 logger.info(">>> " + parent.getSimpleName() + " has been processed, " + fileName + " has been generated. <<<");
             }

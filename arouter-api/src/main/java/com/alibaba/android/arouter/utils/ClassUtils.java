@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.os.Build;
 import android.util.Log;
 
@@ -14,12 +15,16 @@ import com.alibaba.android.arouter.thread.DefaultPoolExecutor;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
@@ -148,6 +153,26 @@ public class ClassUtils {
             sourcePaths.addAll(tryLoadInstantRunDexFile(applicationInfo));
         }
         return sourcePaths;
+    }
+
+    public static Set<String> getRoutersMappingClassNameByAssets(Context context) throws IOException {
+        Set<String> classNames = new HashSet<>();
+        AssetManager assets = context.getAssets();
+        String[] allPaths = assets.list("");
+        for (String path : allPaths) {
+            if (path.endsWith(".rt")) {
+                InputStream open = assets.open(path);
+                Properties properties = new Properties();
+                properties.load(open);
+                String routers = properties.getProperty("routers");
+                String[] classNameArray = routers.split(",");
+                classNames.addAll(Arrays.asList(classNameArray));
+                open.close();
+            }
+        }
+
+        return classNames;
+
     }
 
     /**

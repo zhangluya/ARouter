@@ -1,5 +1,6 @@
 package com.alibaba.android.arouter.compiler.processor;
 
+import com.alibaba.android.arouter.compiler.utils.RoutersMappingGenerator;
 import com.alibaba.android.arouter.compiler.utils.Consts;
 import com.alibaba.android.arouter.compiler.utils.Logger;
 import com.alibaba.android.arouter.compiler.utils.TypeUtils;
@@ -20,9 +21,11 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +54,7 @@ import static com.alibaba.android.arouter.compiler.utils.Consts.FRAGMENT;
 import static com.alibaba.android.arouter.compiler.utils.Consts.IPROVIDER_GROUP;
 import static com.alibaba.android.arouter.compiler.utils.Consts.IROUTE_GROUP;
 import static com.alibaba.android.arouter.compiler.utils.Consts.ITROUTE_ROOT;
+import static com.alibaba.android.arouter.compiler.utils.Consts.KEY_ASSETS_PATH;
 import static com.alibaba.android.arouter.compiler.utils.Consts.KEY_MODULE_NAME;
 import static com.alibaba.android.arouter.compiler.utils.Consts.METHOD_LOAD_INTO;
 import static com.alibaba.android.arouter.compiler.utils.Consts.NAME_OF_GROUP;
@@ -82,7 +86,10 @@ public class RouteProcessor extends AbstractProcessor {
     private Elements elements;
     private TypeUtils typeUtils;
     private String moduleName = null;   // Module name, maybe its 'app' or others
+    private String moduleNameNoFormat;
+    private String assetsPath;
     private TypeMirror iProvider = null;
+    private Set<String> needLoadClassList;
 
     /**
      * Initializes the processor with the processing environment by
@@ -110,6 +117,9 @@ public class RouteProcessor extends AbstractProcessor {
         Map<String, String> options = processingEnv.getOptions();
         if (MapUtils.isNotEmpty(options)) {
             moduleName = options.get(KEY_MODULE_NAME);
+
+            moduleNameNoFormat = options.get(KEY_MODULE_NAME);
+            assetsPath = options.get(KEY_ASSETS_PATH);
         }
 
         if (StringUtils.isNotEmpty(moduleName)) {
@@ -128,7 +138,11 @@ public class RouteProcessor extends AbstractProcessor {
 
         iProvider = elements.getTypeElement(Consts.IPROVIDER).asType();
 
+        needLoadClassList = new HashSet<>();
+
         logger.info(">>> RouteProcessor init. <<<");
+
+        logger.info(">>> file exists " + new File("app/src/main/assets/schame-test.html").exists() + ". <<<");
     }
 
     /**
@@ -144,6 +158,7 @@ public class RouteProcessor extends AbstractProcessor {
             try {
                 logger.info(">>> Found routes, start... <<<");
                 this.parseRoutes(routeElements);
+                RoutersMappingGenerator.createRouterMapping(logger, needLoadClassList, assetsPath, moduleNameNoFormat);
 
             } catch (Exception e) {
                 logger.error(e);
@@ -161,6 +176,8 @@ public class RouteProcessor extends AbstractProcessor {
             logger.info(">>> Found routes, size is " + routeElements.size() + " <<<");
 
             rootMap.clear();
+
+            needLoadClassList.clear();
 
             TypeMirror type_Activity = elements.getTypeElement(ACTIVITY).asType();
             TypeMirror type_Service = elements.getTypeElement(SERVICE).asType();
@@ -331,6 +348,7 @@ public class RouteProcessor extends AbstractProcessor {
 
                 logger.info(">>> Generated group: " + groupName + "<<<");
                 rootMap.put(groupName, groupFileName);
+                needLoadClassList.add(PACKAGE_OF_GENERATE_FILE + "." + groupFileName);
             }
 
             if (MapUtils.isNotEmpty(rootMap)) {
@@ -351,6 +369,8 @@ public class RouteProcessor extends AbstractProcessor {
                             .build()
             ).build().writeTo(mFiler);
 
+            needLoadClassList.add(PACKAGE_OF_GENERATE_FILE + "." + providerMapFileName);
+
             logger.info(">>> Generated provider map, name is " + providerMapFileName + " <<<");
 
             // Write root meta into disk.
@@ -363,6 +383,7 @@ public class RouteProcessor extends AbstractProcessor {
                             .addMethod(loadIntoMethodOfRootBuilder.build())
                             .build()
             ).build().writeTo(mFiler);
+            needLoadClassList.add(PACKAGE_OF_GENERATE_FILE + "." + rootFileName);
 
             logger.info(">>> Generated root, name is " + rootFileName + " <<<");
         }
@@ -428,4 +449,6 @@ public class RouteProcessor extends AbstractProcessor {
 
         return true;
     }
+
+
 }

@@ -1,5 +1,6 @@
 package com.alibaba.android.arouter.compiler.processor;
 
+import com.alibaba.android.arouter.compiler.utils.RoutersMappingGenerator;
 import com.alibaba.android.arouter.compiler.utils.Consts;
 import com.alibaba.android.arouter.compiler.utils.Logger;
 import com.alibaba.android.arouter.facade.annotation.Interceptor;
@@ -17,6 +18,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -39,6 +41,7 @@ import javax.lang.model.util.Elements;
 import static com.alibaba.android.arouter.compiler.utils.Consts.ANNOTATION_TYPE_INTECEPTOR;
 import static com.alibaba.android.arouter.compiler.utils.Consts.IINTERCEPTOR;
 import static com.alibaba.android.arouter.compiler.utils.Consts.IINTERCEPTOR_GROUP;
+import static com.alibaba.android.arouter.compiler.utils.Consts.KEY_ASSETS_PATH;
 import static com.alibaba.android.arouter.compiler.utils.Consts.KEY_MODULE_NAME;
 import static com.alibaba.android.arouter.compiler.utils.Consts.METHOD_LOAD_INTO;
 import static com.alibaba.android.arouter.compiler.utils.Consts.NAME_OF_INTERCEPTOR;
@@ -64,7 +67,10 @@ public class InterceptorProcessor extends AbstractProcessor {
     private Logger logger;
     private Elements elementUtil;
     private String moduleName = null;   // Module name, maybe its 'app' or others
+    private String moduleNameNoFormat;
+    private String assetsPath;
     private TypeMirror iInterceptor = null;
+    private Set<String> needLoadClassList;
 
     /**
      * Initializes the processor with the processing environment by
@@ -89,6 +95,8 @@ public class InterceptorProcessor extends AbstractProcessor {
         Map<String, String> options = processingEnv.getOptions();
         if (MapUtils.isNotEmpty(options)) {
             moduleName = options.get(KEY_MODULE_NAME);
+            moduleNameNoFormat = options.get(KEY_MODULE_NAME);
+            assetsPath = options.get(KEY_ASSETS_PATH);
         }
 
         if (StringUtils.isNotEmpty(moduleName)) {
@@ -105,6 +113,7 @@ public class InterceptorProcessor extends AbstractProcessor {
         }
 
         iInterceptor = elementUtil.getTypeElement(Consts.IINTERCEPTOR).asType();
+        needLoadClassList = new HashSet<>();
 
         logger.info(">>> InterceptorProcessor init. <<<");
     }
@@ -121,6 +130,9 @@ public class InterceptorProcessor extends AbstractProcessor {
             Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(Interceptor.class);
             try {
                 parseInterceptors(elements);
+                if (!needLoadClassList.isEmpty()) {
+                    RoutersMappingGenerator.createRouterMapping(logger, needLoadClassList, assetsPath, moduleNameNoFormat);
+                }
             } catch (Exception e) {
                 logger.error(e);
             }
@@ -205,6 +217,7 @@ public class InterceptorProcessor extends AbstractProcessor {
                             .addSuperinterface(ClassName.get(type_ITollgateGroup))
                             .build()
             ).build().writeTo(mFiler);
+            needLoadClassList.add(PACKAGE_OF_GENERATE_FILE + "." + NAME_OF_INTERCEPTOR + SEPARATOR + moduleName);
 
             logger.info(">>> Interceptor group write over. <<<");
         }

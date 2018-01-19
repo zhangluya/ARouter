@@ -20,6 +20,7 @@ public class Consts {
     public static final String NAME_OF_GROUP = PROJECT + SEPARATOR + "Group" + SEPARATOR;
     public static final String NAME_OF_INTERCEPTOR = PROJECT + SEPARATOR + "Interceptors";
     public static final String NAME_OF_AUTOWIRED = SEPARATOR + PROJECT + SEPARATOR + "Autowired";
+    public static final String NAME_OF_CLASS_CFG = PROJECT + SEPARATOR + "ClassCfg";
     public static final String PACKAGE_OF_GENERATE_FILE = "com.alibaba.android.arouter.routes";
 
     // System interface
@@ -58,6 +59,7 @@ public class Consts {
 
     // Options of processor
     public static final String KEY_MODULE_NAME = "moduleName";
+    public static final String KEY_ASSETS_PATH = "assetsPath";
 
     // Annotation type
     public static final String ANNOTATION_TYPE_INTECEPTOR = FACADE_PACKAGE + ".annotation.Interceptor";

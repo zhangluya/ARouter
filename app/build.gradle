@@ -52,6 +52,7 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
     annotationProcessor project(':arouter-compiler')
+    //annotationProcessor 'com.alibaba:arouter-compiler:1.1.4'
     compile project(':arouter-api')
     compile project(':module-java')
     compile project(':module-kotlin')
@@ -61,4 +62,12 @@ dependencies {
 
     compile "com.android.support:support-v4:${SUPPORT_LIB_VERSION}"
     compile "com.android.support:appcompat-v7:${SUPPORT_LIB_VERSION}"
+}
+
+task loadProperties {
+
+    /*def properties = new Properties();
+    properties.load(new BufferedInputStream(new FileInputStream(file('../app/src/main/assets/routers.rt'))))
+
+    println properties.toString()*/
 }

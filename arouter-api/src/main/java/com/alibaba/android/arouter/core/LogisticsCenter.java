@@ -68,7 +68,8 @@ public class LogisticsCenter {
             if (ARouter.debuggable() || PackageUtils.isNewVersion(context)) {
                 logger.info(TAG, "Run with debug mode or new install, rebuild router map.");
                 // These class was generate by arouter-compiler.
-                routerMap = ClassUtils.getFileNameByPackageName(mContext, ROUTE_ROOT_PAKCAGE);
+                //routerMap = ClassUtils.getFileNameByPackageName(mContext, ROUTE_ROOT_PAKCAGE);
+                routerMap = ClassUtils.getRoutersMappingClassNameByAssets(mContext);
                 if (!routerMap.isEmpty()) {
                     context.getSharedPreferences(AROUTER_SP_CACHE_KEY, Context.MODE_PRIVATE).edit().putStringSet(AROUTER_SP_KEY_MAP, routerMap).apply();
                 }
