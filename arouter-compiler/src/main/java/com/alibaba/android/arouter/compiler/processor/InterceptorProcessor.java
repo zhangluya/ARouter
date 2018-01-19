@@ -41,13 +41,13 @@ import javax.lang.model.util.Elements;
 import static com.alibaba.android.arouter.compiler.utils.Consts.ANNOTATION_TYPE_INTECEPTOR;
 import static com.alibaba.android.arouter.compiler.utils.Consts.IINTERCEPTOR;
 import static com.alibaba.android.arouter.compiler.utils.Consts.IINTERCEPTOR_GROUP;
-import static com.alibaba.android.arouter.compiler.utils.Consts.KEY_ASSETS_PATH;
 import static com.alibaba.android.arouter.compiler.utils.Consts.KEY_MODULE_NAME;
 import static com.alibaba.android.arouter.compiler.utils.Consts.METHOD_LOAD_INTO;
 import static com.alibaba.android.arouter.compiler.utils.Consts.NAME_OF_INTERCEPTOR;
 import static com.alibaba.android.arouter.compiler.utils.Consts.PACKAGE_OF_GENERATE_FILE;
 import static com.alibaba.android.arouter.compiler.utils.Consts.SEPARATOR;
 import static com.alibaba.android.arouter.compiler.utils.Consts.WARNING_TIPS;
+import static com.alibaba.android.arouter.compiler.utils.RoutersMappingGenerator.KEY_ASSETS_PATH;
 import static javax.lang.model.element.Modifier.PUBLIC;
 
 /**
@@ -70,7 +70,7 @@ public class InterceptorProcessor extends AbstractProcessor {
     private String moduleNameNoFormat;
     private String assetsPath;
     private TypeMirror iInterceptor = null;
-    private Set<String> needLoadClassList;
+    private Set<String> routerMappingClassList;
 
     /**
      * Initializes the processor with the processing environment by
@@ -113,7 +113,7 @@ public class InterceptorProcessor extends AbstractProcessor {
         }
 
         iInterceptor = elementUtil.getTypeElement(Consts.IINTERCEPTOR).asType();
-        needLoadClassList = new HashSet<>();
+        routerMappingClassList = new HashSet<>();
 
         logger.info(">>> InterceptorProcessor init. <<<");
     }
@@ -130,8 +130,8 @@ public class InterceptorProcessor extends AbstractProcessor {
             Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(Interceptor.class);
             try {
                 parseInterceptors(elements);
-                if (!needLoadClassList.isEmpty()) {
-                    RoutersMappingGenerator.createRouterMapping(logger, needLoadClassList, assetsPath, moduleNameNoFormat);
+                if (!routerMappingClassList.isEmpty()) {
+                    RoutersMappingGenerator.createRouterMapping(logger, routerMappingClassList, assetsPath, moduleNameNoFormat);
                 }
             } catch (Exception e) {
                 logger.error(e);
@@ -217,7 +217,7 @@ public class InterceptorProcessor extends AbstractProcessor {
                             .addSuperinterface(ClassName.get(type_ITollgateGroup))
                             .build()
             ).build().writeTo(mFiler);
-            needLoadClassList.add(PACKAGE_OF_GENERATE_FILE + "." + NAME_OF_INTERCEPTOR + SEPARATOR + moduleName);
+            routerMappingClassList.add(PACKAGE_OF_GENERATE_FILE + "." + NAME_OF_INTERCEPTOR + SEPARATOR + moduleName);
 
             logger.info(">>> Interceptor group write over. <<<");
         }

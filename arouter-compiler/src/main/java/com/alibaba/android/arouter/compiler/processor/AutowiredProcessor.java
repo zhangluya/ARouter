@@ -46,11 +46,11 @@ import javax.lang.model.util.Types;
 import static com.alibaba.android.arouter.compiler.utils.Consts.ANNOTATION_TYPE_AUTOWIRED;
 import static com.alibaba.android.arouter.compiler.utils.Consts.ISYRINGE;
 import static com.alibaba.android.arouter.compiler.utils.Consts.JSON_SERVICE;
-import static com.alibaba.android.arouter.compiler.utils.Consts.KEY_ASSETS_PATH;
 import static com.alibaba.android.arouter.compiler.utils.Consts.KEY_MODULE_NAME;
 import static com.alibaba.android.arouter.compiler.utils.Consts.METHOD_INJECT;
 import static com.alibaba.android.arouter.compiler.utils.Consts.NAME_OF_AUTOWIRED;
 import static com.alibaba.android.arouter.compiler.utils.Consts.WARNING_TIPS;
+import static com.alibaba.android.arouter.compiler.utils.RoutersMappingGenerator.KEY_ASSETS_PATH;
 import static javax.lang.model.element.Modifier.PUBLIC;
 
 /**
@@ -73,7 +73,7 @@ public class AutowiredProcessor extends AbstractProcessor {
     private Map<TypeElement, List<Element>> parentAndChild = new HashMap<>();   // Contain field need autowired and his super class.
     private static final ClassName ARouterClass = ClassName.get("com.alibaba.android.arouter.launcher", "ARouter");
     private static final ClassName AndroidLog = ClassName.get("android.util", "Log");
-    private Set<String> needLoadClassList;
+    private Set<String> routerMappingClassList;
     private String moduleName;
     private String moduleNameNoFormat;
     private String assetsPath;
@@ -90,7 +90,7 @@ public class AutowiredProcessor extends AbstractProcessor {
 
         logger = new Logger(processingEnv.getMessager());   // Package the log utils.
 
-        needLoadClassList = new HashSet<>();
+        routerMappingClassList = new HashSet<>();
 
         Map<String, String> options = processingEnv.getOptions();
         if (MapUtils.isNotEmpty(options)) {
@@ -123,8 +123,8 @@ public class AutowiredProcessor extends AbstractProcessor {
                 categories(roundEnvironment.getElementsAnnotatedWith(Autowired.class));
                 generateHelper();
 
-                if (!needLoadClassList.isEmpty()) {
-                    RoutersMappingGenerator.createRouterMapping(logger, needLoadClassList, assetsPath, moduleNameNoFormat);
+                if (!routerMappingClassList.isEmpty()) {
+                    RoutersMappingGenerator.createRouterMapping(logger, routerMappingClassList, assetsPath, moduleNameNoFormat);
                 }
 
             } catch (Exception e) {
@@ -249,7 +249,7 @@ public class AutowiredProcessor extends AbstractProcessor {
                 // Generate autowire helper
                 JavaFile.builder(packageName, helper.build()).build().writeTo(mFiler);
 
-                needLoadClassList.add(packageName + "." + fileName);
+                routerMappingClassList.add(packageName + "." + fileName);
 
                 logger.info(">>> " + parent.getSimpleName() + " has been processed, " + fileName + " has been generated. <<<");
             }

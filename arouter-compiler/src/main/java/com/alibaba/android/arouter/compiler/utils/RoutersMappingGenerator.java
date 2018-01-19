@@ -1,5 +1,7 @@
 package com.alibaba.android.arouter.compiler.utils;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,12 +17,13 @@ import java.util.Set;
 
 public class RoutersMappingGenerator {
 
-    public static final String ASSETS_DEF_PATH = "src/main/assets";
+    public static final String DEF_ASSETS_PATH = "src/main/assets";
+    public static final String KEY_ASSETS_PATH = "assetsPath";
 
     public static void createRouterMapping(Logger logger, Set<String> needLoadClassList, String assetPath, String moduleNameNoFormat) throws IOException {
         if (!needLoadClassList.isEmpty()) {
             logger.info(">>> Start create routers config. <<< ");
-            String realAssetsPath = assetPath == null || "".equals(assetPath) ? ASSETS_DEF_PATH : assetPath;
+            String realAssetsPath = StringUtils.isNotEmpty(assetPath) ? assetPath : DEF_ASSETS_PATH;
             File file = new File(moduleNameNoFormat + File.separator + realAssetsPath);
             if (!file.exists()) {
                 boolean mkdir = file.mkdir();
@@ -29,7 +32,7 @@ public class RoutersMappingGenerator {
                     throw new FileNotFoundException("Failed to create Assets folder. Check 'assetsPath' is correct.");
                 }
             }
-            File routersFile = new File(file, moduleNameNoFormat + "_routers.rt");
+            File routersFile = new File(file, moduleNameNoFormat + ".rt");
             logger.info(">>> routers file name " + routersFile.getAbsolutePath() + " <<<");
             if (routersFile.exists()) {
                 FileInputStream fileInputStream = new FileInputStream(routersFile);
@@ -41,13 +44,15 @@ public class RoutersMappingGenerator {
                 if (newValue.equals(routers)) {
                     return;
                 }
-
+                StringBuilder sb = new StringBuilder(routers);
                 if (newValue.length() > routers.length() && newValue.contains(routers)) {
-                    routers += "," + newValue.replace(routers, "");
+                    sb.append(",").append(newValue.replace(routers, ""));
+                    routers = sb.toString();
                 } else if (newValue.length() < routers.length() && routers.contains(newValue)) {
                     routers = newValue;
                 } else {
-                    routers += "," + newValue;
+                    sb.append(",").append(newValue);
+                    routers = sb.toString();
                 }
                 properties.put("routers", routers);
                 FileOutputStream fileOutputStream = new FileOutputStream(routersFile);

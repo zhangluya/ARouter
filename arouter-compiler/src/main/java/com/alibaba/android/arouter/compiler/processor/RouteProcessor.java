@@ -54,7 +54,6 @@ import static com.alibaba.android.arouter.compiler.utils.Consts.FRAGMENT;
 import static com.alibaba.android.arouter.compiler.utils.Consts.IPROVIDER_GROUP;
 import static com.alibaba.android.arouter.compiler.utils.Consts.IROUTE_GROUP;
 import static com.alibaba.android.arouter.compiler.utils.Consts.ITROUTE_ROOT;
-import static com.alibaba.android.arouter.compiler.utils.Consts.KEY_ASSETS_PATH;
 import static com.alibaba.android.arouter.compiler.utils.Consts.KEY_MODULE_NAME;
 import static com.alibaba.android.arouter.compiler.utils.Consts.METHOD_LOAD_INTO;
 import static com.alibaba.android.arouter.compiler.utils.Consts.NAME_OF_GROUP;
@@ -64,6 +63,7 @@ import static com.alibaba.android.arouter.compiler.utils.Consts.PACKAGE_OF_GENER
 import static com.alibaba.android.arouter.compiler.utils.Consts.SEPARATOR;
 import static com.alibaba.android.arouter.compiler.utils.Consts.SERVICE;
 import static com.alibaba.android.arouter.compiler.utils.Consts.WARNING_TIPS;
+import static com.alibaba.android.arouter.compiler.utils.RoutersMappingGenerator.KEY_ASSETS_PATH;
 import static javax.lang.model.element.Modifier.PUBLIC;
 
 /**
@@ -89,7 +89,7 @@ public class RouteProcessor extends AbstractProcessor {
     private String moduleNameNoFormat;
     private String assetsPath;
     private TypeMirror iProvider = null;
-    private Set<String> needLoadClassList;
+    private Set<String> routerMappingClassList;
 
     /**
      * Initializes the processor with the processing environment by
@@ -138,7 +138,7 @@ public class RouteProcessor extends AbstractProcessor {
 
         iProvider = elements.getTypeElement(Consts.IPROVIDER).asType();
 
-        needLoadClassList = new HashSet<>();
+        routerMappingClassList = new HashSet<>();
 
         logger.info(">>> RouteProcessor init. <<<");
 
@@ -158,7 +158,7 @@ public class RouteProcessor extends AbstractProcessor {
             try {
                 logger.info(">>> Found routes, start... <<<");
                 this.parseRoutes(routeElements);
-                RoutersMappingGenerator.createRouterMapping(logger, needLoadClassList, assetsPath, moduleNameNoFormat);
+                RoutersMappingGenerator.createRouterMapping(logger, routerMappingClassList, assetsPath, moduleNameNoFormat);
 
             } catch (Exception e) {
                 logger.error(e);
@@ -177,7 +177,7 @@ public class RouteProcessor extends AbstractProcessor {
 
             rootMap.clear();
 
-            needLoadClassList.clear();
+            routerMappingClassList.clear();
 
             TypeMirror type_Activity = elements.getTypeElement(ACTIVITY).asType();
             TypeMirror type_Service = elements.getTypeElement(SERVICE).asType();
@@ -348,7 +348,7 @@ public class RouteProcessor extends AbstractProcessor {
 
                 logger.info(">>> Generated group: " + groupName + "<<<");
                 rootMap.put(groupName, groupFileName);
-                needLoadClassList.add(PACKAGE_OF_GENERATE_FILE + "." + groupFileName);
+                routerMappingClassList.add(PACKAGE_OF_GENERATE_FILE + "." + groupFileName);
             }
 
             if (MapUtils.isNotEmpty(rootMap)) {
@@ -369,7 +369,7 @@ public class RouteProcessor extends AbstractProcessor {
                             .build()
             ).build().writeTo(mFiler);
 
-            needLoadClassList.add(PACKAGE_OF_GENERATE_FILE + "." + providerMapFileName);
+            routerMappingClassList.add(PACKAGE_OF_GENERATE_FILE + "." + providerMapFileName);
 
             logger.info(">>> Generated provider map, name is " + providerMapFileName + " <<<");
 
@@ -383,7 +383,7 @@ public class RouteProcessor extends AbstractProcessor {
                             .addMethod(loadIntoMethodOfRootBuilder.build())
                             .build()
             ).build().writeTo(mFiler);
-            needLoadClassList.add(PACKAGE_OF_GENERATE_FILE + "." + rootFileName);
+            routerMappingClassList.add(PACKAGE_OF_GENERATE_FILE + "." + rootFileName);
 
             logger.info(">>> Generated root, name is " + rootFileName + " <<<");
         }
