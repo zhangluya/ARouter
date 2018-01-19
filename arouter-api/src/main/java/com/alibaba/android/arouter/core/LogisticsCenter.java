@@ -1,12 +1,14 @@
 package com.alibaba.android.arouter.core;
 
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.net.Uri;
 import android.support.v4.util.ArrayMap;
 
 import com.alibaba.android.arouter.exception.HandlerException;
 import com.alibaba.android.arouter.exception.NoRouteFoundException;
 import com.alibaba.android.arouter.facade.Postcard;
+import com.alibaba.android.arouter.facade.annotation.Route;
 import com.alibaba.android.arouter.facade.enums.TypeKind;
 import com.alibaba.android.arouter.facade.model.RouteMeta;
 import com.alibaba.android.arouter.facade.service.InterceptorService;
@@ -24,9 +26,14 @@ import com.alibaba.android.arouter.utils.TextUtils;
 import com.qihoo360.replugin.RePlugin;
 import com.qihoo360.replugin.model.PluginInfo;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -74,7 +81,8 @@ public class LogisticsCenter {
             if (ARouter.debuggable() || PackageUtils.isNewVersion(context)) {
                 logger.info(TAG, "Run with debug mode or new install, rebuild router map.");
                 // These class was generate by arouter-compiler.
-                routerMap = ClassUtils.getFileNameByPackageName(mContext, ROUTE_ROOT_PAKCAGE);
+                //routerMap = ClassUtils.getFileNameByPackageName(mContext, ROUTE_ROOT_PAKCAGE);
+                routerMap = getRoutesMapping(context);
                 if (!routerMap.isEmpty()) {
                     context.getSharedPreferences(AROUTER_SP_CACHE_KEY, Context.MODE_PRIVATE).edit().putStringSet(AROUTER_SP_KEY_MAP, routerMap).apply();
                 }
@@ -142,7 +150,8 @@ public class LogisticsCenter {
             if (ARouter.debuggable() || PackageUtils.isNewVersion(mContext) || forceUpdate) {
                 logger.info(TAG, "Run with debug mode or new install, rebuild router map.");
                 // These class was generate by arouter-compiler.
-                routerMap = ClassUtils.getPluginClassesByPluginSourcePaths(pluginName, ROUTE_ROOT_PAKCAGE);
+                //routerMap = ClassUtils.getPluginClassesByPluginSourcePaths(pluginName, ROUTE_ROOT_PAKCAGE);
+                routerMap = getRoutesMapping(RePlugin.fetchContext(pluginName));
                 if (!routerMap.isEmpty()) {
                     mContext.getSharedPreferences(AROUTER_SP_CACHE_KEY, Context.MODE_PRIVATE).edit().putStringSet(pluginName, routerMap).apply();
                 }
@@ -364,6 +373,17 @@ public class LogisticsCenter {
         } catch (Throwable ex) {
             logger.warning(Consts.TAG, "LogisticsCenter setValue failed! " + ex.getMessage());
         }
+    }
+
+    private static Set<String> getRoutesMapping(Context context) throws IOException {
+        Set<String> classNames = new HashSet<>();
+        AssetManager assets = context.getAssets();
+        InputStream open = assets.open("routes.rt");
+
+        String next = new Scanner(open).useDelimiter("\\A").next();
+        String[] arrays = next.split("\n");
+        classNames.addAll(Arrays.asList(arrays));
+        return classNames;
     }
 
     /**
