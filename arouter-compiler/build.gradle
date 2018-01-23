@@ -23,5 +23,26 @@ dependencies {
     compile 'org.apache.commons:commons-collections4:4.1'
 }
 
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
+//apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
+//apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
+
+apply plugin: 'maven'
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            println "maven upload -->> ${project.name}"
+            def shouldVersion = '1.0.0'
+            println "maven should version -->> $shouldVersion"
+            repository(url: uri('http://10.254.20.27:8081/repository/aopai/')) {
+                authentication(userName: 'admin', password: 'admin123')
+            }
+            pom.project {
+                version shouldVersion
+                artifactId 'replugin-arouter-compiler'
+                groupId 'com.apass'
+            }
+
+        }
+    }
+}
