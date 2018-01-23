@@ -34,11 +34,11 @@ public final class ARouter {
     /**
      * Init, it must be call before used router.
      */
-    public static void init(Application application) {
+    public static void init(Application application, String hostGroup) {
         if (!hasInit) {
             logger = _ARouter.logger;
             _ARouter.logger.info(Consts.TAG, "ARouter init start.");
-            hasInit = _ARouter.init(application);
+            hasInit = _ARouter.init(application, hostGroup);
 
             if (hasInit) {
                 _ARouter.afterInit();
@@ -122,6 +122,10 @@ public final class ARouter {
 
     public static void setLogger(ILogger userLogger) {
         _ARouter.setLogger(userLogger);
+    }
+
+    public static void installPluginRouterMap(String pluginName) {
+        _ARouter.installPluginRouterMap(pluginName);
     }
 
     /**

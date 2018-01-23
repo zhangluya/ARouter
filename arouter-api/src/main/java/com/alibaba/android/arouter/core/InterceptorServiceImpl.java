@@ -115,14 +115,14 @@ public class InterceptorServiceImpl implements InterceptorService {
                             throw new HandlerException(TAG + "ARouter init interceptor error! name = [" + interceptorClass.getName() + "], reason = [" + ex.getMessage() + "]");
                         }
                     }
+                }
 
-                    interceptorHasInit = true;
+                interceptorHasInit = true;
 
-                    logger.info(TAG, "ARouter interceptors init over.");
+                logger.info(TAG, "ARouter interceptors init over.");
 
-                    synchronized (interceptorInitLock) {
-                        interceptorInitLock.notifyAll();
-                    }
+                synchronized (interceptorInitLock) {
+                    interceptorInitLock.notifyAll();
                 }
             }
         });

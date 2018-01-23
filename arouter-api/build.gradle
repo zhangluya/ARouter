@@ -42,7 +42,20 @@ dependencies {
     annotationProcessor project(':arouter-compiler')
     compile 'com.alibaba:arouter-annotation:1.0.4'
     compile "com.android.support:support-v4:${SUPPORT_LIB_VERSION}"
+    provided 'com.qihoo360.replugin:replugin-host-lib:2.2.1'
 }
 
 apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
 apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
+
+task makeJar(type: Jar, dependsOn: ['build']) {
+    destinationDir = file('build/outputs/jar/')
+    baseName = "router"
+    version = "1.0.0"
+    from('build/intermediates/classes/debug')
+    exclude('**/BuildConfig.class')
+    exclude('**/BuildConfig\$*.class')
+    exclude('**/R.class')
+    exclude('**/R\$*.class')
+    include('**/*.class')
+}
