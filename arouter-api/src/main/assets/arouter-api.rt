@@ -1,0 +1,2 @@
+#Tue Jan 23 13:04:33 CST 2018
+routers=com.alibaba.android.arouter.routes.ARouter$$Root$$arouterapi,com.alibaba.android.arouter.routes.ARouter$$Providers$$arouterapi,com.alibaba.android.arouter.routes.ARouter$$Group$$arouter

@@ -22,9 +22,14 @@ public class RoutersMappingGenerator {
 
     public static void createRouterMapping(Logger logger, Set<String> needLoadClassList, String assetPath, String moduleNameNoFormat) throws IOException {
         if (!needLoadClassList.isEmpty()) {
-            logger.info(">>> Start create routers config. <<< ");
+            logger.info(">>> Start create routers config. assets path " + assetPath + " <<< ");
             String realAssetsPath = StringUtils.isNotEmpty(assetPath) ? assetPath : DEF_ASSETS_PATH;
-            File file = new File(moduleNameNoFormat + File.separator + realAssetsPath);
+            File file;
+            if (StringUtils.isNotEmpty(assetPath)) {
+                file = new File(assetPath);
+            } else {
+                file = new File(moduleNameNoFormat + File.separator + DEF_ASSETS_PATH);
+            }
             if (!file.exists()) {
                 boolean mkdir = file.mkdir();
                 if (!mkdir) {

@@ -32,7 +32,7 @@ uploadArchives {
     repositories {
         mavenDeployer {
             println "maven upload -->> ${project.name}"
-            def shouldVersion = '1.0.0'
+            def shouldVersion = '1.0.1'
             println "maven should version -->> $shouldVersion"
             repository(url: uri('http://10.254.20.27:8081/repository/aopai/')) {
                 authentication(userName: 'admin', password: 'admin123')
